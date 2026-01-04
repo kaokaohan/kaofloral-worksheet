@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工作單</title>
+  <style>
+    :root {
+      --primary: #4a6fa5;
+      --primary-light: #e7f0ff;
+      --border: #e3e3e3;
+      --bg: #f5f5f7;
+      --text-main: #222;
+      --text-sub: #777;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Segoe UI", sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+      color: var(--text-main);
+    }
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 12px 40px;
+    }
+    header { margin-bottom: 8px; }
+    header h1 {
+      font-size: 1.3rem;
+      margin: 0 0 4px;
+      text-align: center;
+    }
+    header .hint {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      text-align: center;
+    }
+
+    .backend-links {
+      padding: 15px;
+      background: #f2f2f2;
+      border-bottom: 1px solid #ddd;
+    }
+    .backend-links h2 { margin-top: 0; }
+
+    /* 日期導覽列 */
+    .date-nav-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding-top: 6px;
+      margin: 8px -12px 4px;
+      background: linear-gradient(to bottom, rgba(245,245,247,0.96), rgba(245,245,247,0.9), rgba(245,245,247,0));
+      backdrop-filter: blur(6px);
+    }
+    .date-nav {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 6px 12px 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .date-chip {
+      flex: 0 0 auto;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text-main);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .date-chip.primary {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* 會館篩選列 */
+    .hall-filters {
+      display: flex;
+      gap: 6px;
+      padding: 4px 12px 10px;
+      overflow-x: auto;
+    }
+    .hall-chip {
+      flex: 0 0 auto;
+      font-size: 0.82rem;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-main);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .hall-chip.active {
+      border-color: #2f855a;
+      background: #e6f4ec;
+      color: #276749;
+      font-weight: 600;
+    }
+
+    /* 卡片 */
+    .item {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 0;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .item-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+    .title {
+      font-size: 0.98rem;
+      font-weight: 600;
+      flex: 1;
+    }
+    .badge {
+      font-size: 0.7rem;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      color: var(--text-sub);
+    }
+    .chevron {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      transition: transform 0.18s ease;
+    }
+    .item.collapsed .chevron { transform: rotate(-90deg); }
+    .item-body {
+      padding: 0 12px 10px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .item.collapsed .item-body { display: none; }
+    .btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin: 8px 0 6px;
+    }
+    .copy-btn {
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--primary);
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .copy-btn.small {
+      font-size: 0.75rem;
+      padding: 4px 8px;
+    }
+    .text-box {
+      width: 100%;
+      min-height: 220px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      resize: vertical;
+      background: #fcfcfc;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="backend-links">
+  <h2>資訊</h2>
+  <ul style="line-height:1.8;">
+    <li><a href="https://kaoflower-staff.netlify.app/staff-price" target="_blank">員工價網頁(密碼20261234)</a></li>
+    <li><a href="https://sites.google.com/view/kaofloral-blessing" target="_blank">款式照片網頁</a></li>    
+  </ul>
+</div>
+
+<div class="page">
+  <header>
+    <h1>工作單</h1>
+  </header>
+
+  <div class="date-nav-wrapper">
+    <div class="date-nav" id="dateNav"></div>
+    <div class="hall-filters">
+      <button class="hall-chip active" data-hall="all">全部</button>
+      <button class="hall-chip" data-hall="慈關">只看慈關</button>
+      <button class="hall-chip" data-hall="東吉">只看東吉</button>
+      <button class="hall-chip" data-hall="岑芯">只看岑芯</button>
+      <button class="hall-chip" data-hall="正達">只看正達</button>
+      <button class="hall-chip" data-hall="福沅">只看福沅</button>
+    </div>
+  </div>
+
+  <div id="caseContainer"></div>
+</div>
+
+<script>
+fetch("/content/cases.json?v=" + Date.now())
+  .then(res => {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  })
+  .then(data => {
+    window.CASES = data.items || [];
+    renderCases();
+  })
+  .catch(err => {
+    console.error("載入 cases.json 失敗：", err);
+    alert("載入資料失敗，請確認 /content/cases.json 是否存在、路徑是否正確");
+  });
+</script>
+
+
+<script>
+  function renderCases() {
+    if (!window.CASES || !Array.isArray(window.CASES)) return;
+
+    const container = document.getElementById("caseContainer");
+    const dateNav = document.getElementById("dateNav");
+
+    container.innerHTML = "";
+    dateNav.innerHTML = "";
+
+    const dateKeys = [...new Set(window.CASES.map(c => c.dateKey))];
+
+    // 建日期 chips
+    dateKeys.forEach(k => {
+      const btn = document.createElement("button");
+      btn.className = "date-chip";
+      // k 例如 d1121 → 顯示 11/21
+      const raw = k.replace(/^d/, "");
+      const label = raw.slice(0, 2) + "/" + raw.slice(2);
+      btn.textContent = label;
+      btn.dataset.target = k;
+
+      btn.onclick = () => {
+        const target = document.getElementById(k);
+        if (target) {
+          const top = target.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top, behavior: "smooth" });
+        }
+        document.querySelectorAll(".date-chip").forEach(c => c.classList.remove("primary"));
+        btn.classList.add("primary");
+      };
+
+      dateNav.appendChild(btn);
+    });
+
+// 建卡片
+window.CASES.forEach((c, i) => {
+  let anchor = document.getElementById(c.dateKey);
+  if (!anchor) {
+    anchor = document.createElement("div");
+    anchor.id = c.dateKey;
+    container.appendChild(anchor);
+  }
+
+  const item = document.createElement("div");
+  item.className = "item";
+  item.dataset.hall = c.hall;
+
+  // ✅ 先在 JS 裡算好 imgBlock，再塞進 HTML
+  const imgBlock = (c.image && String(c.image).trim())
+    ? `<div style="margin-top:10px">
+         <img src="${c.image}"
+              alt="參考圖"
+              style="width:100%;max-height:420px;object-fit:contain;border-radius:10px;border:1px solid #eee;background:#fff;" />
+       </div>`
+    : "";
+
+  item.innerHTML = `
+    <div class="item-header">
+      <div class="title">${c.title}</div>
+      <span class="badge">${c.hall}</span>
+      <span class="chevron">⌄</span>
+    </div>
+    <div class="item-body">
+      <div class="btn-row">
+        <button class="copy-btn small" data-target="txt${i}">📋 一鍵複製</button>
+      </div>
+
+      <textarea id="txt${i}" class="text-box" readonly>
+${c.firstLine}
+🌸 親愛的親友您好：
+
+為協助處理告別式現場花籃的預訂，我們已備妥線上訂購表單，您可透過下方連結填寫：
+
+🔗 告別式會場花籃訂購頁
+${c.url}
+
+若您不便填寫，也可以直接傳 LINE 告知我們以下資訊，我們將為您處理：
+1️⃣ 訂購數量（如：1對）
+2️⃣ 花卡落款署名
+3️⃣ 聯絡人姓名與電話
+4️⃣ 收據寄送地址
+5️⃣ 匯款證明（拍照或後5碼）
+
+💰匯款資訊：
+永豐銀行807 深坑分行
+戶名：高于涵
+帳號：17801800223376
+（請備註訂購人姓名）
+
+❗提醒：花籃將統一送至「告別式會場」，非安靈處。
+
+如需取消，請於告別式前一日告知，將扣$15手續費退款。
+
+感謝您的致意。</textarea>
+
+      ${imgBlock}
+    </div>
+  `;
+
+  container.appendChild(item);
+});
+
+
+    // 卡片展開 / 收合
+    document.querySelectorAll(".item-header").forEach(h => {
+      h.addEventListener("click", () => {
+        h.parentElement.classList.toggle("collapsed");
+      });
+    });
+
+    // 一鍵複製
+    document.querySelectorAll(".copy-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-target");
+        const textarea = document.getElementById(id);
+        if (!textarea) return;
+        const text = textarea.value;
+        const old = btn.textContent;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = "✅ 已複製";
+            setTimeout(() => (btn.textContent = old), 1500);
+          }).catch(() => {});
+        } else {
+          textarea.focus();
+          textarea.select();
+          document.execCommand("copy");
+          btn.textContent = "✅ 已複製";
+          setTimeout(() => (btn.textContent = old), 1500);
+        }
+      });
+    });
+
+    // 會館篩選
+    document.querySelectorAll(".hall-chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".hall-chip").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const hall = btn.getAttribute("data-hall");
+        document.querySelectorAll(".item").forEach(card => {
+          if (hall === "all") {
+            card.style.display = "";
+          } else {
+            card.style.display = card.dataset.hall === hall ? "" : "none";
+          }
+        });
+      });
+    });
+  }
+
+</script>
+
+</body>
+</html>
