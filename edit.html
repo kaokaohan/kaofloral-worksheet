@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工作單（編輯）</title>
+  <style>
+    :root{--bg:#f5f5f7;--card:#fff;--border:#e6e6e6;--text:#222;--sub:#777;--primary:#4a6fa5;}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Segoe UI",sans-serif;color:var(--text)}
+    .page{max-width:1100px;margin:0 auto;padding:14px 12px 80px;}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+    h1{margin:0;font-size:1.2rem}
+    .sub{font-size:.85rem;color:var(--sub)}
+    .bar{
+      position:sticky;top:0;z-index:10;margin:0 -12px;
+      padding:10px 12px;background:linear-gradient(to bottom, rgba(245,245,247,.98), rgba(245,245,247,.9), rgba(245,245,247,0));
+      backdrop-filter: blur(6px);
+      border-bottom:1px solid rgba(0,0,0,.03);
+    }
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    button{
+      border:1px solid var(--border);background:#fff;border-radius:10px;
+      padding:8px 12px;font-size:.92rem;cursor:pointer
+    }
+    button.primary{border-color:var(--primary);background:var(--primary);color:#fff}
+    button.danger{border-color:#c53030;background:#c53030;color:#fff}
+    input,select{
+      padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:.92rem;
+    }
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.04);padding:12px}
+    .table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--border);background:#fff}
+    table{border-collapse:separate;border-spacing:0;width:100%;min-width:1000px}
+    th,td{border-bottom:1px solid #f0f0f0;padding:8px 10px;vertical-align:top;font-size:.9rem}
+    th{position:sticky;top:0;background:#fafafa;z-index:1;text-align:left}
+    tr:hover td{background:#fcfcff}
+    textarea{width:100%;min-height:52px;resize:vertical;font:inherit;font-size:.9rem;border:1px solid var(--border);border-radius:10px;padding:6px 8px}
+    .pill{font-size:.78rem;border:1px solid var(--border);padding:4px 10px;border-radius:999px;background:#fff}
+    .right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .avatar{width:26px;height:26px;border-radius:999px;border:1px solid var(--border)}
+    .hint{font-size:.82rem;color:var(--sub)}
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>工作單（編輯）</h1>
+      <div class="sub">登入 GitHub 後才能儲存（會 commit 回 repo）</div>
+    </div>
+    <div class="right">
+      <a class="sub" href="/index.html" target="_blank">開唯讀版</a>
+      <span id="userBox" class="pill">未登入</span>
+      <img id="avatar" class="avatar" style="display:none" />
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="row">
+      <button id="btnLogin" class="primary">用 GitHub 登入</button>
+      <button id="btnLogout">登出</button>
+      <button id="btnReload">重新載入資料</button>
+
+      <span class="pill">快速操作</span>
+      <button id="btnAdd">➕ 新增一筆</button>
+      <button id="btnClone">📄 複製上一筆</button>
+      <button id="btnDelete" class="danger">🗑 刪除勾選</button>
+
+      <span class="right">
+        <span class="hint">篩選日期</span>
+        <input type="date" id="dateFilter" />
+        <select id="groupFilter">
+          <option value="all">全部地區</option>
+          <option value="二殯組">二殯組</option>
+          <option value="板殯組">板殯組</option>
+          <option value="桃殯組">桃殯組</option>
+          <option value="外場組">外場組</option>
+        </select>
+        <button id="btnSave" class="primary">💾 儲存到 GitHub</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <div class="hint" id="status">狀態：尚未載入</div>
+    <div class="table-wrap" style="margin-top:10px">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">選取</th>
+            <th style="width:130px">日期</th>
+            <th style="width:100px">場次</th>
+            <th style="width:220px">地點</th>
+            <th style="width:260px">內容</th>
+            <th style="width:220px">備註</th>
+            <th style="width:120px">下單人</th>
+            <th style="width:110px">列印</th>
+            <th style="width:120px">回傳照片</th>
+            <th style="width:120px">分類</th>
+            <th style="width:220px">圖片網址</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ======= state =======
+  const state = { items: [], token: "" };
+
+  function $(id){ return document.getElementById(id); }
+  function uid(it){
+    // 建議你固定 id：date + time + place + buyer（可自己改）
+    const a = (it.date||"").replaceAll("-","");
+    const b = (it.time||"").replaceAll(":","");
+    const c = (it.place||"").slice(0,20);
+    const d = (it.buyer||"");
+    return `${a}-${b}-${c}-${d}`.replace(/\s+/g,"");
+  }
+  function setStatus(msg){ $("status").textContent = "狀態：" + msg; }
+
+  function readTokenFromHash(){
+    const h = location.hash || "";
+    const m = h.match(/token=([^&]+)/);
+    if(m){
+      const t = decodeURIComponent(m[1]);
+      localStorage.setItem("gh_token", t);
+      location.hash = "";
+    }
+  }
+
+  async function whoami(){
+    const token = localStorage.getItem("gh_token") || "";
+    state.token = token;
+    if(!token){
+      $("userBox").textContent = "未登入";
+      $("avatar").style.display = "none";
+      return;
+    }
+    const res = await fetch("/.netlify/functions/whoami", {
+      headers: { Authorization: "Bearer " + token }
+    });
+    if(!res.ok){
+      $("userBox").textContent = "登入失效（請重新登入）";
+      $("avatar").style.display = "none";
+      return;
+    }
+    const me = await res.json();
+    $("userBox").textContent = `已登入：${me.login}`;
+    if(me.avatar_url){
+      $("avatar").src = me.avatar_url;
+      $("avatar").style.display = "";
+    }
+  }
+
+  function filterItems(){
+    const d = $("dateFilter").value;
+    const g = $("groupFilter").value;
+    return state.items.filter(it=>{
+      if(d && it.date !== d) return false;
+      if(g !== "all" && it.group !== g) return false;
+      return true;
+    }).sort((a,b)=>{
+      if(a.date !== b.date) return a.date.localeCompare(b.date);
+      return (a.time||"").localeCompare(b.time||"");
+    });
+  }
+
+  function render(){
+    const tbody = $("tbody");
+    const items = filterItems();
+    tbody.innerHTML = items.map((it, idx)=>{
+      const id = it.id || uid(it);
+      it.id = id;
+
+      const checked = it._checked ? "checked" : "";
+      const printed = it.printed ? "checked" : "";
+      const photo = it.photoReturned ? "checked" : "";
+
+      return `
+        <tr data-id="${id}">
+          <td><input type="checkbox" class="chk" ${checked}></td>
+          <td><input class="cell" data-k="date" type="date" value="${it.date||""}"></td>
+          <td><input class="cell" data-k="time" type="text" value="${it.time||""}" placeholder="09:00/上午場"></td>
+          <td><input class="cell" data-k="place" type="text" value="${(it.place||"").replaceAll('"','&quot;')}"></td>
+          <td><textarea class="cell" data-k="content">${it.content||""}</textarea></td>
+          <td><textarea class="cell" data-k="note">${it.note||""}</textarea></td>
+          <td><input class="cell" data-k="buyer" type="text" value="${(it.buyer||"").replaceAll('"','&quot;')}"></td>
+          <td><input class="flag" data-k="printed" type="checkbox" ${printed}></td>
+          <td><input class="flag" data-k="photoReturned" type="checkbox" ${photo}></td>
+          <td>
+            <select class="cell" data-k="group">
+              ${["二殯組","板殯組","桃殯組","外場組"].map(g=>`<option value="${g}" ${it.group===g?"selected":""}>${g}</option>`).join("")}
+            </select>
+          </td>
+          <td><input class="cell" data-k="image" type="text" value="${(it.image||"").replaceAll('"','&quot;')}" placeholder="https://..."></td>
+        </tr>
+      `;
+    }).join("");
+
+    // 綁事件
+    tbody.querySelectorAll("tr").forEach(tr=>{
+      const id = tr.dataset.id;
+
+      tr.querySelector(".chk").addEventListener("change", (e)=>{
+        const it = state.items.find(x=>x.id===id);
+        it._checked = e.target.checked;
+      });
+
+      tr.querySelectorAll(".cell").forEach(el=>{
+        const k = el.dataset.k;
+        el.addEventListener("input", ()=>{
+          const it = state.items.find(x=>x.id===id);
+          it[k] = el.value;
+          // id 若是空的，或日期/時間/地點/下單人改了，重新生成 id
+          if(!it.id) it.id = uid(it);
+        });
+      });
+
+      tr.querySelectorAll(".flag").forEach(el=>{
+        const k = el.dataset.k;
+        el.addEventListener("change", ()=>{
+          const it = state.items.find(x=>x.id===id);
+          it[k] = el.checked;
+        });
+      });
+    });
+  }
+
+  async function load(){
+    setStatus("載入中…");
+    const res = await fetch("/content/worksheet.json?v=" + Date.now());
+    const data = await res.json();
+    state.items = Array.isArray(data.items) ? data.items : [];
+    setStatus(`已載入 ${state.items.length} 筆`);
+    render();
+  }
+
+  function addNew(base){
+    const it = base ? JSON.parse(JSON.stringify(base)) : {
+      id: "",
+      date: "",
+      time: "",
+      place: "",
+      content: "",
+      note: "",
+      buyer: "",
+      printed: false,
+      photoReturned: false,
+      group: "板殯組",
+      image: ""
+    };
+    it.id = uid(it);
+    it._checked = false;
+    state.items.push(it);
+    render();
+    setStatus("已新增（尚未儲存）");
+  }
+
+  function deleteChecked(){
+    const before = state.items.length;
+    state.items = state.items.filter(it=>!it._checked);
+    const after = state.items.length;
+    render();
+    setStatus(`已刪除 ${before-after} 筆（尚未儲存）`);
+  }
+
+  async function save(){
+    const token = localStorage.getItem("gh_token") || "";
+    if(!token){
+      alert("請先用 GitHub 登入後再儲存");
+      return;
+    }
+    // 清除暫存欄位 _checked
+    const clean = state.items.map(it=>{
+      const o = {...it};
+      delete o._checked;
+      return o;
+    });
+    const payload = JSON.stringify({ items: clean }, null, 2);
+
+    setStatus("儲存中（commit 回 GitHub）…");
+    const res = await fetch("/.netlify/functions/save-worksheet", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        Authorization:"Bearer " + token
+      },
+      body: JSON.stringify({
+        content: payload,
+        message: `Update worksheet (${new Date().toLocaleString("zh-TW")})`
+      })
+    });
+
+    const out = await res.json().catch(()=>({}));
+    if(!res.ok){
+      console.log(out);
+      alert("儲存失敗：\n" + JSON.stringify(out, null, 2));
+      setStatus("儲存失敗（看 console）");
+      return;
+    }
+    setStatus("✅ 已儲存！commit: " + (out.commit || ""));
+    // 重新載入確保一致
+    await load();
+  }
+
+  // ======= UI events =======
+  $("btnLogin").onclick = ()=> location.href = "/.netlify/functions/auth-start";
+  $("btnLogout").onclick = ()=>{
+    localStorage.removeItem("gh_token");
+    state.token = "";
+    whoami();
+    alert("已登出");
+  };
+  $("btnReload").onclick = load;
+  $("btnAdd").onclick = ()=> addNew();
+  $("btnClone").onclick = ()=>{
+    const last = filterItems().slice(-1)[0];
+    addNew(last || null);
+  };
+  $("btnDelete").onclick = deleteChecked;
+  $("btnSave").onclick = save;
+
+  $("dateFilter").addEventListener("change", render);
+  $("groupFilter").addEventListener("change", render);
+
+  // ======= init =======
+  readTokenFromHash();
+  whoami();
+  load();
+</script>
+</body>
+</html>
