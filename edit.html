@@ -98,7 +98,7 @@
             <th style="width:110px">列印</th>
             <th style="width:120px">回傳照片</th>
             <th style="width:120px">分類</th>
-            <th style="width:220px">圖片網址</th>
+            <th style="width:260px">圖片</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -196,7 +196,16 @@
               ${["二殯組","板殯組","桃殯組","基殯組","外場組"].map(g=>`<option value="${g}" ${it.group===g?"selected":""}>${g}</option>`).join("")}
             </select>
           </td>
-          <td><input class="cell" data-k="image" type="text" value="${(it.image||"").replaceAll('"','&quot;')}" placeholder="https://..."></td>
+          <td>
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:240px">
+              ${it.image ? `<img src="${it.image}?v=${Date.now()}" style="max-width:240px;max-height:160px;object-fit:cover;border:1px solid var(--border);border-radius:10px">` : `<div class="hint">尚未上傳</div>`}
+              
+              <input type="file" class="uploader" accept="image/*" />
+              <button class="btnRemoveImg" type="button">移除圖片</button>
+              
+              <div class="hint" style="word-break:break-all">${it.image || ""}</div>
+            </div>
+          </td>
         </tr>
       `;
     }).join("");
@@ -227,6 +236,65 @@
           it[k] = el.checked;
         });
       });
+
+      // 上傳圖片
+      const up = tr.querySelector(".uploader");
+      if(up){
+        up.addEventListener("change", async (e)=>{
+          const file = e.target.files?.[0];
+          if(!file) return;
+
+          const token = localStorage.getItem("gh_token") || "";
+          if(!token){
+            alert("請先用 GitHub 登入後再上傳圖片");
+            up.value = "";
+            return;
+          }
+
+          // 轉 base64（只取內容，不含 data:image/...）
+          const b64 = await fileToBase64(file);
+
+          setStatus("圖片上傳中…");
+          const res = await fetch("/.netlify/functions/upload-image", {
+            method: "POST",
+            headers: {
+              "Content-Type":"application/json",
+              Authorization: "Bearer " + token
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              contentType: file.type,
+              base64: b64
+            })
+          });
+
+          const out = await res.json().catch(()=>({}));
+          if(!res.ok){
+            console.log(out);
+            alert("圖片上傳失敗：\n" + JSON.stringify(out, null, 2));
+            setStatus("圖片上傳失敗（看 console）");
+            up.value = "";
+            return;
+          }
+
+          const it = state.items.find(x=>x.id===id);
+          it.image = out.path; // 例如 /uploads/20260104_xxx.jpg
+          setStatus("✅ 圖片已上傳（尚未儲存工作單）");
+          render();
+          up.value = "";
+        });
+      }
+
+      // 移除圖片
+      const rm = tr.querySelector(".btnRemoveImg");
+      if(rm){
+        rm.addEventListener("click", ()=>{
+          const it = state.items.find(x=>x.id===id);
+          it.image = "";
+          setStatus("已移除圖片（尚未儲存）");
+          render();
+        });
+      }
     });
   }
 
@@ -238,6 +306,27 @@
     setStatus(`已載入 ${state.items.length} 筆`);
     render();
   }
+
+  function fileToBase64(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=> {
+        const dataUrl = reader.result; // data:image/png;base64,xxxx
+        const b64 = String(dataUrl).split(",")[1] || "";
+        resolve(b64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function safeExtFromType(type){
+    if(type === "image/png") return "png";
+    if(type === "image/jpeg") return "jpg";
+    if(type === "image/webp") return "webp";
+    return "png";
+  }
+
 
   function addNew(base){
     const it = base ? JSON.parse(JSON.stringify(base)) : {
