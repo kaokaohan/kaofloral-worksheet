@@ -74,6 +74,7 @@
           <option value="二殯組">二殯組</option>
           <option value="板殯組">板殯組</option>
           <option value="桃殯組">桃殯組</option>
+          <option value="基殯組">基殯組</option>
           <option value="外場組">外場組</option>
         </select>
         <button id="btnSave" class="primary">💾 儲存到 GitHub</button>
@@ -91,8 +92,8 @@
             <th style="width:130px">日期</th>
             <th style="width:100px">場次</th>
             <th style="width:220px">地點</th>
-            <th style="width:260px">內容</th>
-            <th style="width:220px">備註</th>
+            <th style="width:300px">內容</th>
+            <th style="width:300px">備註</th>
             <th style="width:120px">下單人</th>
             <th style="width:110px">列印</th>
             <th style="width:120px">回傳照片</th>
@@ -192,7 +193,7 @@
           <td><input class="flag" data-k="photoReturned" type="checkbox" ${photo}></td>
           <td>
             <select class="cell" data-k="group">
-              ${["二殯組","板殯組","桃殯組","外場組"].map(g=>`<option value="${g}" ${it.group===g?"selected":""}>${g}</option>`).join("")}
+              ${["二殯組","板殯組","桃殯組","基殯組","外場組"].map(g=>`<option value="${g}" ${it.group===g?"selected":""}>${g}</option>`).join("")}
             </select>
           </td>
           <td><input class="cell" data-k="image" type="text" value="${(it.image||"").replaceAll('"','&quot;')}" placeholder="https://..."></td>
@@ -249,7 +250,7 @@
       buyer: "",
       printed: false,
       photoReturned: false,
-      group: "板殯組",
+      group: "",
       image: ""
     };
     it.id = uid(it);
