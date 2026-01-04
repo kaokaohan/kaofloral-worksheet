@@ -1,0 +1,26 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "uploads"
+public_folder: "/uploads"
+
+collections:
+  - name: "cases"
+    label: "專案文字庫"
+    files:
+      - file: "content/cases.json"
+        label: "全部專案"
+        name: "all"
+        fields:
+          - label: "專案列表"
+            name: "items"
+            widget: list
+            allow_add: true
+            fields:
+              - { label: "會館", name: "hall", widget: "string" }
+              - { label: "日期 Key", name: "dateKey", widget: "string" }
+              - { label: "標題", name: "title", widget: "string" }
+              - { label: "首行文字", name: "firstLine", widget: "string" }
+              - { label: "專案連結", name: "url", widget: "string", required: false }
+              - { label: "參考圖片", name: "image", widget: "image", required: false }
