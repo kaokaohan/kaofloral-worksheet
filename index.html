@@ -47,13 +47,7 @@
     .flags{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .flag{font-size:.78rem;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:#fff}
     .flag.ok{border-color:#2f855a;background:#e6f4ec;color:#276749;font-weight:600}
-    .img{margin-top:10px}
-    .img img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;border:1px solid #eee;background:#fff}
     .empty{padding:18px;text-align:center;color:var(--sub)}
-    .img-toggle{display:inline-flex; align-items:center; gap:6px;font-size:.82rem; padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff; cursor:pointer;}
-    .img-box{margin-top:6px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;}
-    .img-box[hidden]{ display:none; }
-    .img-box img{width:100%;height:auto;display:block;}
     /* 圖片：小縮圖 + 展開 */
     .img{margin-top:10px}
     .thumb-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
@@ -140,7 +134,7 @@
               <button class="img-toggle" data-act="toggle-img">🖼️ 展開圖片</button>
             </div>
             <div class="img-box" hidden>
-              <img loading="lazy" src="${it.image}" alt="參考圖">
+              <img data-act="toggle-img" loading="lazy" src="${it.image}" alt="參考圖">
             </div>
           </div>
         `
