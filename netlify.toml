@@ -1,3 +1,21 @@
 [build]
   publish = "."
-  functions = "netlify/functions"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/edit"
+  to = "/edit.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/index.html"
+  status = 200
+
+# ⚠️ 最後才放 catch-all
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
