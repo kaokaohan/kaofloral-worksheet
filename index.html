@@ -50,6 +50,19 @@
     .img{margin-top:10px}
     .img img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;border:1px solid #eee;background:#fff}
     .empty{padding:18px;text-align:center;color:var(--sub)}
+    .img-toggle{display:inline-flex; align-items:center; gap:6px;font-size:.82rem; padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff; cursor:pointer;}
+    .img-box{margin-top:6px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;}
+    .img-box[hidden]{ display:none; }
+    .img-box img{width:100%;height:auto;display:block;}
+    /* 圖片：小縮圖 + 展開 */
+    .img{margin-top:10px}
+    .thumb-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+    .thumb{width:120px; height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;}
+    .thumb:hover{filter:brightness(.98)}
+    .img-toggle{display:inline-flex; align-items:center; gap:6px;font-size:.82rem; padding:6px 10px;border:1px solid var(--border); border-radius:999px;background:#fff; cursor:pointer;}
+    .img-box{margin-top:8px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;}
+    .img-box[hidden]{display:none;}
+    .img-box img{width:100%;height:auto;display:block;max-height:520px;object-fit:contain;}
   </style>
 </head>
 <body>
@@ -70,6 +83,7 @@
           <option value="二殯組">二殯組</option>
           <option value="板殯組">板殯組</option>
           <option value="桃殯組">桃殯組</option>
+          <option value="基殯組">基殯組</option>
           <option value="外場組">外場組</option>
         </select>
         <input type="text" id="q" placeholder="搜尋：地點 / 下單人 / 內容" />
@@ -119,7 +133,17 @@
       else flags.push(`<span class="flag">未回傳照片</span>`);
 
       const img = (it.image && String(it.image).trim())
-        ? `<div class="img"><img src="${it.image}" alt="參考圖"></div>`
+        ? `
+          <div class="img">
+            <div class="thumb-row">
+              <img class="thumb" data-act="toggle-img" loading="lazy" src="${it.image}" alt="縮圖">
+              <button class="img-toggle" data-act="toggle-img">🖼️ 展開圖片</button>
+            </div>
+            <div class="img-box" hidden>
+              <img loading="lazy" src="${it.image}" alt="參考圖">
+            </div>
+          </div>
+        `
         : "";
 
       return `
@@ -138,6 +162,23 @@
         </div>
       `;
     }).join("");
+    document.querySelectorAll('[data-act="toggle-img"]').forEach(el=>{
+      el.addEventListener("click", ()=>{
+        // thumb 或 button 都在 thumb-row 裡，img-box 在下一層
+        const imgWrap = el.closest(".img");
+        const box = imgWrap.querySelector(".img-box");
+        const btn = imgWrap.querySelector(".img-toggle");
+
+        const isHidden = box.hasAttribute("hidden");
+        if(isHidden){
+          box.removeAttribute("hidden");
+          btn.textContent = "🖼️ 收合圖片";
+        }else{
+          box.setAttribute("hidden", "");
+          btn.textContent = "🖼️ 展開圖片";
+        }
+      });
+    });
   }
 
   async function load(){
